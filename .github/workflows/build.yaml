@@ -61,5 +61,7 @@ jobs:
           EOF
 
       - name: Pull and redeploy
+        env:
+          PODMAN_COMPOSE_PROVIDER: podman-compose
         run: |
           podman compose --connection production -f compose.prod.yaml up -d --remove-orphans --pull always
