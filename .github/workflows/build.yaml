@@ -1,12 +1,15 @@
-name: Build and publish Docker image
+name: Build, push, and deploy Docker images
 on:
   push:
     branches:
-      - "k8s"
+      - "main"
 jobs:
   push_to_registry:
-    name: Build and push Docker image to registry
+    name: Build and push Docker images to ghcr.io
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Check out the repo
         uses: actions/checkout@v6
@@ -14,31 +17,45 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Scaleway
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: rg.fr-par.scw.cloud/djnd
-          username: nologin
-          password: ${{ secrets.SCW_SECRET_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        env:
-          DOCKER_BUILD_SUMMARY: false
-          DOCKER_BUILD_RECORD_UPLOAD: false
-        with:
-          context: ./kvak
-          push: true
-          tags: |
-            rg.fr-par.scw.cloud/djnd/kvak:${{ github.sha }}
-            rg.fr-par.scw.cloud/djnd/kvak:latest
+      - name: Build images
+        run: docker compose -f compose.prod.yaml build
 
-      - name: Update image versions in kustomize/kustomization.yaml
+      - name: Push images
+        run: docker compose -f compose.prod.yaml push
+
+  deploy:
+    name: Deploy to production via SSH
+    runs-on: ubuntu-latest
+    needs: push_to_registry
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Set up SSH key
         run: |
-          sed -i "s/newTag: .*\+/newTag\: '${{ github.sha }}'/" kustomize/kustomization.yaml
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
 
-      - name: Commit and push new image versions
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: "."
-          message: "Update image versions in kustomize/kustomization.yaml"
+      - name: Add Podman remote connection
+        run: |
+          podman system connection add production \
+            --identity ~/.ssh/id_ed25519 \
+            ssh://${{ vars.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}/run/user/${{ vars.DEPLOY_SSH_UID }}/podman/podman.sock
+
+      - name: Write .env file
+        run: |
+          cat > .env <<'EOF'
+          PERSISTENT_DATA_DIR=${{ vars.PERSISTENT_DATA_DIR }}
+          POSTGRES_DB_PASSWORD=${{ secrets.POSTGRES_DB_PASSWORD }}
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          EOF
+
+      - name: Pull and redeploy
+        run: |
+          podman compose --connection production -f compose.prod.yaml up -d --remove-orphans --pull always
