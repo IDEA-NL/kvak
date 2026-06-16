@@ -24,6 +24,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install podman-compose
+        run: sudo apt-get update && sudo apt-get install -y podman-compose
+
       - name: Build images
         run: docker compose -f compose.prod.yaml build
 
