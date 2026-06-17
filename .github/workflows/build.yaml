@@ -49,12 +49,6 @@ jobs:
           install -m 600 -D /dev/null ~/.ssh/id_ed25519
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
 
-      - name: Add Podman remote connection
-        run: |
-          podman system connection add production \
-            --identity ~/.ssh/id_ed25519 \
-            ssh://${{ vars.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}/run/user/${{ vars.DEPLOY_SSH_UID }}/podman/podman.sock
-
       - name: Write .env file
         run: |
           cat > .env <<'EOF'
@@ -66,5 +60,7 @@ jobs:
       - name: Pull and redeploy
         env:
           PODMAN_COMPOSE_PROVIDER: podman-compose
+          CONTAINER_HOST: ssh://${{ vars.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}/run/user/${{ vars.DEPLOY_SSH_UID }}/podman/podman.sock
+          CONTAINER_SSHKEY: ~/.ssh/id_ed25519
         run: |
-          podman compose --connection production -f compose.prod.yaml up -d --remove-orphans --pull always
+          podman compose -f compose.prod.yaml up -d --remove-orphans --pull always
