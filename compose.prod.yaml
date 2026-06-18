@@ -1,7 +1,7 @@
 services:
   kvak:
     build: ./kvak
-    image: ghcr.io/idea-nl/kvak/kvak
+    image: ghcr.io/idea-nl/kvak/kvak:latest
     working_dir: /app
     command: >
       sh -c "python manage.py collectstatic --no-input &&
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: nginx:alpine
+    image: docker.io/nginx:alpine
     volumes:
       - ${PERSISTENT_DATA_DIR}/kvak-storage:/usr/share/nginx/html
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16-alpine
+    image: docker.io/postgres:16-alpine
     environment:
       POSTGRES_DB: kvak
       POSTGRES_USER: kvak
