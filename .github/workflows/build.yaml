@@ -63,4 +63,4 @@ jobs:
           CONTAINER_HOST: ssh://${{ vars.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}/run/user/${{ vars.DEPLOY_SSH_UID }}/podman/podman.sock
           CONTAINER_SSHKEY: ${{ github.workspace }}/.ssh/id_ed25519
         run: |
-          podman compose -f compose.prod.yaml up -d --remove-orphans --pull always
+          podman compose -f compose.prod.yaml up -d --remove-orphans --pull=always
