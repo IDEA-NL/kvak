@@ -27,6 +27,7 @@ services:
       DJANGO_EMAIL_USE_TLS: ${DJANGO_EMAIL_USE_TLS}
       DJANGO_REPLY_TO_EMAIL: ${DJANGO_REPLY_TO_EMAIL}
       DJANGO_FROM_EMAIL: ${DJANGO_FROM_EMAIL}
+      DJANGO_DOMAIN: kvak.idebate.net
     depends_on:
       - db
     restart: unless-stopped
