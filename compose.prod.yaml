@@ -9,7 +9,7 @@ services:
         gunicorn kvak.wsgi:application -b 0.0.0.0:8000 --log-level DEBUG --workers 1 --threads 3 --timeout 90"
     user: "wagtail:wagtail"
     volumes:
-      - ${PERSISTENT_DATA_DIR}/kvak-storage:/storage
+      - kvak_storage:/storage
     environment:
       # --- GENERAL SETTINGS ---
       DJANGO_SETTINGS_MODULE: kvak.settings.prod
@@ -32,12 +32,11 @@ services:
     restart: unless-stopped
 
   web:
-    image: docker.io/nginx:alpine
+    build: ./nginx
     volumes:
-      - ${PERSISTENT_DATA_DIR}/kvak-storage:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - kvak_storage:/usr/share/nginx/html
     ports:
-      - "8080:80"
+      - ${APP_PORT:-8080}:80
     depends_on:
       - kvak
     restart: unless-stopped
@@ -49,5 +48,9 @@ services:
       POSTGRES_USER: kvak
       POSTGRES_PASSWORD: ${POSTGRES_DB_PASSWORD}
     volumes:
-      - ${PERSISTENT_DATA_DIR}/postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+
+volumes:
+  kvak_storage:
+  postgres_data:

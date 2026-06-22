@@ -41,9 +41,6 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v6
 
-      - name: Install podman-compose
-        run: sudo apt-get update && sudo apt-get install -y podman-compose
-
       - name: Set up SSH key
         run: |
           install -m 600 -D /dev/null "${{ github.workspace }}/.ssh/id_ed25519"
@@ -52,15 +49,14 @@ jobs:
       - name: Write .env file
         run: |
           cat > .env <<'EOF'
-          PERSISTENT_DATA_DIR=${{ vars.PERSISTENT_DATA_DIR }}
           POSTGRES_DB_PASSWORD=${{ secrets.POSTGRES_DB_PASSWORD }}
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          APP_PORT=127.0.0.1:8001
           EOF
 
-      - name: Pull and redeploy
+      - name: Deploy with Docker Compose
         env:
-          PODMAN_COMPOSE_PROVIDER: podman-compose
-          CONTAINER_HOST: ssh://${{ vars.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}/run/user/${{ vars.DEPLOY_SSH_UID }}/podman/podman.sock
-          CONTAINER_SSHKEY: ${{ github.workspace }}/.ssh/id_ed25519
+          DOCKER_HOST: ssh://${{ vars.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}/run/user/${{ vars.DEPLOY_SSH_UID }}/podman/podman.sock
+          COMPOSE_PROJECT_NAME: kvak
         run: |
-          podman compose -f compose.prod.yaml up -d --remove-orphans --pull-always --no-build
+          docker compose -f compose.prod.yaml up -d --remove-orphans --pull always
