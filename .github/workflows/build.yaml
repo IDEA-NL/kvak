@@ -41,10 +41,15 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v6
 
-      - name: Set up SSH key
+      - name: Set up SSH
         run: |
+          # Install the SSH key
           install -m 600 -D /dev/null "${{ github.workspace }}/.ssh/id_ed25519"
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > "${{ github.workspace }}/.ssh/id_ed25519"
+          # Disable host key checking
+          mkdir -p ~/.ssh
+          echo -e "Host *\n    StrictHostKeyChecking no\n    UserKnownHostsFile /dev/null" > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Write .env file
         run: |
