@@ -44,8 +44,8 @@ jobs:
       - name: Set up SSH
         run: |
           # Install the SSH key
-          install -m 600 -D /dev/null ~/.ssh/.ssh/id_ed25519"
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/.ssh/id_ed25519"
+          install -m 600 -D /dev/null ~/.ssh/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/.ssh/id_ed25519
           # Disable host key checking
           mkdir -p ~/.ssh
           echo -e "Host *\n    StrictHostKeyChecking no\n    UserKnownHostsFile /dev/null" > ~/.ssh/config
